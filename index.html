@@ -8,113 +8,79 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SOS Medellín">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="description" content="Sistema de alertas tempranas para gestión del riesgo en Medellín">
 <title>SOS Medellín</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <style>
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background: #faf9f5;
-  color: #1a1a1a;
-  -webkit-font-smoothing: antialiased;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-#app {
-  height: 100vh;
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-#screen-content {
-  flex: 1;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #faf9f5; color: #1a1a1a; -webkit-font-smoothing: antialiased; }
+body { user-select: none; -webkit-user-select: none; }
+input, textarea { user-select: text; -webkit-user-select: text; }
+#app { height: 100vh; height: 100dvh; display: flex; flex-direction: column; position: relative; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+#screen-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 button { font-family: inherit; cursor: pointer; }
+input, textarea { font-family: inherit; font-size: 16px; }
 
 .risk-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 500; }
 .risk-red { background: #FCEBEB; color: #791F1F; }
 .risk-orange { background: #FAECE7; color: #993C1D; }
 .risk-yellow { background: #FAEEDA; color: #854F0B; }
+.risk-green { background: #EAF3DE; color: #27500A; }
 
 .action-card { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 10px; }
-
 .big-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 12px; border: 0; font-size: 14px; font-weight: 500; width: 100%; }
 .btn-emergency { background: #A32D2D; color: #fff; }
-
 .alert-item { padding: 12px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid; }
 
-.tab-bar {
-  background: #fff;
-  border-top: 0.5px solid rgba(0,0,0,0.1);
-  display: flex;
-  justify-content: space-around;
-  padding: 8px 0 max(10px, env(safe-area-inset-bottom));
-  flex-shrink: 0;
-}
+.tab-bar { background: #fff; border-top: 0.5px solid rgba(0,0,0,0.1); display: flex; justify-content: space-around; padding: 8px 0 max(10px, env(safe-area-inset-bottom)); flex-shrink: 0; }
 .tab-icon { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; color: #5f5e5a; padding: 4px 8px; border-radius: 6px; }
 .tab-icon.active { color: #1a1a1a; }
 .tab-icon.active i { color: #A32D2D; }
 
 .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #5f5e5a; font-weight: 500; margin: 0 0 8px; }
-
 .report-type { display: flex; align-items: center; gap: 8px; padding: 12px; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 8px; font-size: 13px; background: #fff; }
 .report-type.selected { border-color: #A32D2D; background: #FCEBEB; color: #791F1F; }
-
 .help-card { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 
-.chat-bubble { padding: 8px 10px; border-radius: 12px; font-size: 12px; max-width: 80%; line-height: 1.4; }
-.chat-out { background: #DCF8C6; color: #1a3d0a; align-self: flex-end; border-bottom-right-radius: 4px; }
-.chat-in { background: #fff; border: 0.5px solid rgba(0,0,0,0.1); align-self: flex-start; border-bottom-left-radius: 4px; }
-
-/* Estado de carga al cambiar de modo */
 .fade-in { animation: fadeIn .25s ease-out; }
 @keyframes fadeIn { from { opacity: 0.4; } to { opacity: 1; } }
 
-/* Toggle modo sénior flotante */
-.senior-fab {
-  position: fixed;
-  top: calc(env(safe-area-inset-top) + 12px);
-  right: 12px;
-  background: rgba(255,255,255,0.95);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 0.5px solid rgba(0,0,0,0.1);
-  border-radius: 999px;
-  padding: 6px 10px 6px 8px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 500;
-  z-index: 100;
-  color: #1a1a1a;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
+.senior-fab { position: fixed; top: calc(env(safe-area-inset-top) + 12px); right: 12px; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 0.5px solid rgba(0,0,0,0.1); border-radius: 999px; padding: 6px 10px 6px 8px; display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; z-index: 1000; color: #1a1a1a; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 .senior-fab.active { background: #A32D2D; color: #fff; }
 .toggle-track { width: 28px; height: 16px; background: rgba(0,0,0,0.2); border-radius: 999px; position: relative; }
 .senior-fab.active .toggle-track { background: rgba(255,255,255,0.3); }
 .toggle-thumb { width: 12px; height: 12px; background: #fff; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: left .2s; }
 .senior-fab.active .toggle-thumb { left: 14px; }
 
-/* Bloquear zoom y selección */
-input, button { font-size: 16px; } /* evita zoom en iOS al hacer focus */
+#leaflet-map { width: 100%; height: 100%; z-index: 1; }
+.leaflet-container { background: #dde5d3 !important; }
+
+.toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: #1a1a1a; color: #fff; padding: 12px 18px; border-radius: 10px; font-size: 13px; z-index: 2000; box-shadow: 0 4px 12px rgba(0,0,0,0.2); max-width: 90%; text-align: center; animation: toastIn .3s ease-out; }
+.toast.success { background: #1D9E75; }
+.toast.error { background: #A32D2D; }
+@keyframes toastIn { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1500; display: flex; flex-direction: column; }
+.camera-view { flex: 1; position: relative; overflow: hidden; }
+.camera-view video, .camera-view img { width: 100%; height: 100%; object-fit: cover; }
+.camera-controls { background: #000; padding: 20px; display: flex; justify-content: space-around; align-items: center; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+.camera-btn-shutter { width: 64px; height: 64px; border-radius: 50%; background: #fff; border: 4px solid #fff; box-shadow: 0 0 0 2px #fff; }
+.camera-btn-shutter:active { transform: scale(0.95); }
+.camera-btn-secondary { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.2); border: 0; color: #fff; display: flex; align-items: center; justify-content: center; }
+
+/* Dialog de confirmación para llamadas */
+.confirm-dialog { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1500; display: flex; align-items: center; justify-content: center; padding: 20px; animation: fadeIn .2s ease-out; }
+.confirm-card { background: #fff; border-radius: 16px; padding: 24px; max-width: 320px; width: 100%; text-align: center; }
+
+.photo-preview { width: 100%; height: 180px; object-fit: cover; border-radius: 12px; }
+
+/* Banner de permiso de notificaciones */
+.notif-banner { background: #185FA5; color: #fff; padding: 12px 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.notif-banner button { background: #fff; color: #185FA5; border: 0; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -125,97 +91,436 @@ input, button { font-size: 16px; } /* evita zoom en iOS al hacer focus */
     <span>Sénior</span>
     <div class="toggle-track"><div class="toggle-thumb"></div></div>
   </button>
-
   <div id="screen-content"></div>
   <div id="tab-bar-container"></div>
 </div>
 
+<div id="toast-container"></div>
+<div id="modal-container"></div>
+
 <script>
 (function(){
+  // ============= ESTADO GLOBAL =============
   let currentScreen = 'inicio';
   let seniorMode = false;
-
-  // Cargar preferencia guardada
-  try {
-    seniorMode = localStorage.getItem('seniorMode') === 'true';
-  } catch(e){}
-
-  // ============= MAPA DE MEDELLÍN =============
-  const mapaMedellin = (compact) => {
-    const h = compact ? 90 : 440;
-    const showLabels = !compact;
-    return `
-    <svg viewBox="0 0 280 ${h}" style="width:100%;height:100%;display:block" preserveAspectRatio="${compact?'xMidYMid slice':'xMidYMid meet'}">
-      <defs>
-        <pattern id="hills${compact?'c':'f'}" patternUnits="userSpaceOnUse" width="20" height="20">
-          <path d="M0,20 Q5,15 10,20 T20,20" stroke="#9CB89A" stroke-width="0.5" fill="none" opacity="0.4"/>
-        </pattern>
-      </defs>
-      <rect width="280" height="${h}" fill="#dde5d3"/>
-      <path d="M0,0 L0,${h} L70,${h} L80,${h*0.85} L60,${h*0.6} L75,${h*0.4} L55,${h*0.2} L70,0 Z" fill="#a8c098" opacity="0.85"/>
-      <path d="M210,0 L225,${h*0.18} L205,${h*0.4} L220,${h*0.6} L200,${h*0.8} L215,${h} L280,${h} L280,0 Z" fill="#a8c098" opacity="0.85"/>
-      <rect width="280" height="${h}" fill="url(#hills${compact?'c':'f'})"/>
-      <path d="M140,0 Q135,${h*0.2} 142,${h*0.4} Q148,${h*0.6} 138,${h*0.8} Q135,${h*0.9} 140,${h}" stroke="#5b9bd5" stroke-width="${compact?3:5}" fill="none" stroke-linecap="round" opacity="0.85"/>
-      <line x1="125" y1="0" x2="125" y2="${h}" stroke="#fff" stroke-width="${compact?1.5:2}" opacity="0.9"/>
-      <line x1="155" y1="0" x2="155" y2="${h}" stroke="#fff" stroke-width="${compact?1.5:2}" opacity="0.9"/>
-      ${!compact ? `
-      <line x1="0" y1="120" x2="280" y2="135" stroke="#fff" stroke-width="2.5" opacity="0.85"/>
-      <line x1="0" y1="220" x2="280" y2="235" stroke="#fff" stroke-width="2.5" opacity="0.85"/>
-      <line x1="0" y1="340" x2="280" y2="355" stroke="#fff" stroke-width="2.5" opacity="0.85"/>
-      `:''}
-      ${showLabels ? `
-        <text x="35" y="80" font-size="9" font-weight="600" fill="#27500A" opacity="0.7">Comuna 1</text>
-        <text x="30" y="92" font-size="8" fill="#3B6D11" opacity="0.7">Popular</text>
-        <text x="35" y="180" font-size="9" font-weight="600" fill="#27500A" opacity="0.7">Comuna 3</text>
-        <text x="28" y="192" font-size="8" fill="#3B6D11" opacity="0.7">Manrique</text>
-        <text x="40" y="290" font-size="9" font-weight="600" fill="#27500A" opacity="0.7">Comuna 8</text>
-        <text x="22" y="302" font-size="8" fill="#3B6D11" opacity="0.7">Villa Hermosa</text>
-        <text x="35" y="395" font-size="9" font-weight="600" fill="#27500A" opacity="0.7">Comuna 9</text>
-        <text x="38" y="407" font-size="8" fill="#3B6D11" opacity="0.7">Buenos Aires</text>
-        <text x="220" y="100" font-size="9" font-weight="600" fill="#27500A" opacity="0.7">Comuna 6</text>
-        <text x="218" y="112" font-size="8" fill="#3B6D11" opacity="0.7">Doce de Oct.</text>
-        <text x="225" y="220" font-size="9" font-weight="600" fill="#27500A" opacity="0.7">Comuna 7</text>
-        <text x="225" y="232" font-size="8" fill="#3B6D11" opacity="0.7">Robledo</text>
-        <text x="220" y="330" font-size="9" font-weight="600" fill="#27500A" opacity="0.7">Comuna 13</text>
-        <text x="225" y="342" font-size="8" fill="#3B6D11" opacity="0.7">San Javier</text>
-      `:''}
-      <circle cx="60" cy="${h*0.62}" r="${compact?14:36}" fill="#A32D2D" opacity="0.25"/>
-      ${!compact ? `<circle cx="60" cy="${h*0.62}" r="20" fill="#A32D2D" opacity="0.4"/>`:''}
-      <circle cx="60" cy="${h*0.62}" r="${compact?4:7}" fill="#A32D2D"/>
-      <circle cx="225" cy="${h*0.72}" r="${compact?10:28}" fill="#D85A30" opacity="0.25"/>
-      <circle cx="225" cy="${h*0.72}" r="${compact?4:6}" fill="#D85A30"/>
-      <circle cx="50" cy="${h*0.18}" r="${compact?8:22}" fill="#EF9F27" opacity="0.25"/>
-      <circle cx="50" cy="${h*0.18}" r="${compact?4:6}" fill="#EF9F27"/>
-      ${!compact ? `
-        <g transform="translate(150,${h*0.7})"><rect x="-10" y="-10" width="20" height="20" rx="3" fill="#1D9E75"/><text x="0" y="4" text-anchor="middle" font-size="13" fill="#fff" font-weight="700">+</text></g>
-        <text x="150" y="${h*0.7+22}" text-anchor="middle" font-size="8" font-weight="600" fill="#0F6E56">Refugio Pinar</text>
-        <g transform="translate(170,${h*0.45})"><rect x="-10" y="-10" width="20" height="20" rx="3" fill="#1D9E75"/><text x="0" y="4" text-anchor="middle" font-size="13" fill="#fff" font-weight="700">+</text></g>
-        <path d="M65,${h*0.62} Q100,${h*0.65} 145,${h*0.7}" stroke="#185FA5" stroke-width="2.5" stroke-dasharray="4,3" fill="none"/>
-        <g transform="translate(110,${h*0.52})"><circle r="11" fill="#fff" stroke="#185FA5" stroke-width="2.5"/><circle r="5" fill="#185FA5"/></g>
-        <text x="110" y="${h*0.52-15}" text-anchor="middle" font-size="9" font-weight="600" fill="#0C447C">Usted</text>
-      `:''}
-    </svg>`;
+  let mapInstance = null;
+  let userLocationMarker = null;
+  let currentReport = {
+    photo: null, type: null, description: '', location: null, address: null
   };
 
-  const mapaMedellinSenior = `
-    <svg viewBox="0 0 280 380" style="width:100%;height:100%;display:block" preserveAspectRatio="xMidYMid meet">
-      <rect width="280" height="380" fill="#dde5d3"/>
-      <path d="M0,0 L0,380 L75,380 L70,200 L75,0 Z" fill="#a8c098" opacity="0.85"/>
-      <path d="M210,0 L210,380 L280,380 L280,0 Z" fill="#a8c098" opacity="0.85"/>
-      <path d="M140,0 Q140,190 140,380" stroke="#5b9bd5" stroke-width="6" fill="none" stroke-linecap="round"/>
-      <line x1="125" y1="0" x2="125" y2="380" stroke="#fff" stroke-width="3"/>
-      <line x1="155" y1="0" x2="155" y2="380" stroke="#fff" stroke-width="3"/>
-      <line x1="0" y1="180" x2="280" y2="195" stroke="#fff" stroke-width="3.5"/>
-      <circle cx="60" cy="220" r="44" fill="#A32D2D" opacity="0.3"/>
-      <circle cx="60" cy="220" r="24" fill="#A32D2D" opacity="0.5"/>
-      <circle cx="60" cy="220" r="12" fill="#A32D2D"/>
-      <text x="60" y="178" text-anchor="middle" font-size="16" font-weight="700" fill="#501313">¡Peligro!</text>
-      <path d="M72,220 Q120,250 165,290" stroke="#185FA5" stroke-width="5" stroke-dasharray="6,4" fill="none" stroke-linecap="round"/>
-      <g transform="translate(180,295)"><rect x="-18" y="-18" width="36" height="36" rx="6" fill="#1D9E75"/><text x="0" y="7" text-anchor="middle" font-size="24" font-weight="700" fill="#fff">+</text></g>
-      <text x="180" y="345" text-anchor="middle" font-size="14" font-weight="600" fill="#0F6E56">Refugio</text>
-      <g transform="translate(105,180)"><circle r="16" fill="#fff" stroke="#185FA5" stroke-width="3.5"/><circle r="7" fill="#185FA5"/></g>
-      <text x="105" y="155" text-anchor="middle" font-size="14" font-weight="600" fill="#0C447C">Usted</text>
-    </svg>`;
+  try { seniorMode = localStorage.getItem('seniorMode') === 'true'; } catch(e){}
+
+  // ============= UTILIDADES =============
+  function showToast(message, type = '') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    document.getElementById('toast-container').appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  function vibrate(pattern = 50) {
+    if (navigator.vibrate) navigator.vibrate(pattern);
+  }
+
+  // ============= NOTIFICACIONES PUSH =============
+  // Usa la API Notification del navegador (sin necesidad de Firebase ni backend).
+  // Esto envía notificaciones LOCALES — el teléfono las muestra como notificaciones reales
+  // del sistema operativo, incluso cuando la app está cerrada.
+
+  function getNotifPermission() {
+    if (!('Notification' in window)) return 'unsupported';
+    return Notification.permission; // 'default', 'granted', 'denied'
+  }
+
+  async function pedirPermisoNotificaciones() {
+    if (!('Notification' in window)) {
+      showToast('Tu navegador no soporta notificaciones', 'error');
+      return false;
+    }
+    if (Notification.permission === 'granted') return true;
+    if (Notification.permission === 'denied') {
+      showToast('Permiso denegado. Actívalo en ajustes del teléfono', 'error');
+      return false;
+    }
+    const result = await Notification.requestPermission();
+    if (result === 'granted') {
+      showToast('¡Notificaciones activadas!', 'success');
+      // Notificación de prueba
+      enviarNotificacion(
+        'SOS Medellín activado',
+        'Te avisaremos sobre alertas en tu zona',
+        'shield-check'
+      );
+      return true;
+    } else {
+      showToast('Notificaciones no activadas', 'error');
+      return false;
+    }
+  }
+
+  function enviarNotificacion(titulo, mensaje, tipo = 'alert') {
+    if (Notification.permission !== 'granted') return;
+
+    const opciones = {
+      body: mensaje,
+      icon: 'icon-192.png',
+      badge: 'icon-192.png',
+      vibrate: [200, 100, 200],
+      tag: 'sos-medellin-' + Date.now(),
+      requireInteraction: false
+    };
+
+    // Si hay service worker, usar showNotification (mejor compatibilidad iOS/Android)
+    if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(titulo, opciones);
+      });
+    } else {
+      new Notification(titulo, opciones);
+    }
+  }
+
+  // Simulación: cada 2 minutos verifica si hay "nuevas alertas"
+  // En producción real esto vendría de un servidor con Firebase Cloud Messaging
+  function programarAlertasDePrueba() {
+    if (Notification.permission !== 'granted') return;
+    // Una alerta de demostración 30 segundos después de activar permisos
+    setTimeout(() => {
+      enviarNotificacion(
+        '⚠️ Alerta en tu zona',
+        'Riesgo de deslizamiento en La Honda. Toca para ver más.',
+        'alert'
+      );
+    }, 30000);
+  }
+
+  // ============= GEOLOCALIZACIÓN =============
+  function obtenerUbicacion() {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('GPS no soportado'));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy
+        }),
+        (err) => {
+          let msg = 'No se pudo obtener tu ubicación';
+          if (err.code === 1) msg = 'Permiso de ubicación denegado';
+          else if (err.code === 2) msg = 'Ubicación no disponible';
+          else if (err.code === 3) msg = 'Tiempo agotado';
+          reject(new Error(msg));
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      );
+    });
+  }
+
+  async function obtenerDireccion(lat, lng) {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=es`,
+        { headers: { 'User-Agent': 'SOS-Medellin-App' } }
+      );
+      const data = await res.json();
+      if (data.address) {
+        const a = data.address;
+        const parts = [];
+        if (a.road) parts.push(a.road);
+        if (a.house_number) parts.push(`#${a.house_number}`);
+        if (a.suburb || a.neighbourhood) parts.push(a.suburb || a.neighbourhood);
+        return parts.join(', ') || 'Ubicación detectada';
+      }
+      return 'Ubicación detectada';
+    } catch (e) {
+      return 'Ubicación detectada';
+    }
+  }
+
+  // ============= CÁMARA =============
+  async function abrirCamara() {
+    vibrate(30);
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="camera-view" id="camera-view">
+        <video id="cam-video" autoplay playsinline muted></video>
+        <canvas id="cam-canvas" style="display:none"></canvas>
+      </div>
+      <div class="camera-controls">
+        <button class="camera-btn-secondary" id="cam-cancel"><i class="ti ti-x" style="font-size:22px"></i></button>
+        <button class="camera-btn-shutter" id="cam-shutter"></button>
+        <button class="camera-btn-secondary" id="cam-flip"><i class="ti ti-refresh" style="font-size:20px"></i></button>
+      </div>`;
+    document.getElementById('modal-container').appendChild(modal);
+
+    let stream = null;
+    let facingMode = 'environment';
+
+    async function startCamera() {
+      try {
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: facingMode },
+          audio: false
+        });
+        document.getElementById('cam-video').srcObject = stream;
+      } catch (err) {
+        modal.remove();
+        showToast(err.name === 'NotAllowedError' ? 'Permiso de cámara denegado' : 'No se pudo acceder a la cámara', 'error');
+      }
+    }
+
+    await startCamera();
+
+    document.getElementById('cam-cancel').onclick = () => {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      modal.remove();
+    };
+
+    document.getElementById('cam-flip').onclick = () => {
+      facingMode = facingMode === 'environment' ? 'user' : 'environment';
+      startCamera();
+    };
+
+    document.getElementById('cam-shutter').onclick = () => {
+      vibrate(50);
+      const video = document.getElementById('cam-video');
+      const canvas = document.getElementById('cam-canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      currentReport.photo = canvas.toDataURL('image/jpeg', 0.7);
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      modal.remove();
+      render();
+      showToast('Foto capturada', 'success');
+    };
+  }
+
+  // ============= TELÉFONOS — CON CONFIRMACIÓN =============
+  // En vez de marcar directamente, mostramos un dialog de confirmación
+  // para evitar marcaciones accidentales al 123
+  function mostrarTelefono(numero, nombre) {
+    vibrate(30);
+    const dialog = document.createElement('div');
+    dialog.className = 'confirm-dialog';
+    dialog.innerHTML = `
+      <div class="confirm-card">
+        <div style="width:64px;height:64px;border-radius:50%;background:#FCEBEB;margin:0 auto 14px;display:flex;align-items:center;justify-content:center">
+          <i class="ti ti-phone" style="color:#A32D2D;font-size:32px"></i>
+        </div>
+        <p style="margin:0 0 4px;font-size:18px;font-weight:600">${nombre}</p>
+        <p style="margin:0 0 18px;font-size:32px;font-weight:600;color:#A32D2D;letter-spacing:1px">${numero}</p>
+        <p style="margin:0 0 18px;font-size:13px;color:#5f5e5a;line-height:1.5">¿Quieres llamar a este número?</p>
+        <div style="display:flex;gap:8px">
+          <button id="dialog-cancel" style="flex:1;padding:14px;background:#f5f4ee;color:#1a1a1a;border:0;border-radius:10px;font-size:14px;font-weight:500">Cancelar</button>
+          <button id="dialog-call" style="flex:1;padding:14px;background:#A32D2D;color:#fff;border:0;border-radius:10px;font-size:14px;font-weight:600">Llamar</button>
+        </div>
+      </div>`;
+    document.getElementById('modal-container').appendChild(dialog);
+
+    document.getElementById('dialog-cancel').onclick = () => dialog.remove();
+    document.getElementById('dialog-call').onclick = () => {
+      window.location.href = `tel:${numero}`;
+      dialog.remove();
+    };
+  }
+
+  // ============= GUARDAR REPORTES (LOCAL) =============
+  function guardarReporte(reporte) {
+    try {
+      const reportes = JSON.parse(localStorage.getItem('reportes') || '[]');
+      reportes.unshift({ ...reporte, id: Date.now(), fecha: new Date().toISOString() });
+      localStorage.setItem('reportes', JSON.stringify(reportes));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function obtenerReportes() {
+    try {
+      return JSON.parse(localStorage.getItem('reportes') || '[]');
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function eliminarReporte(id) {
+    try {
+      const reportes = obtenerReportes().filter(r => r.id !== id);
+      localStorage.setItem('reportes', JSON.stringify(reportes));
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function formatearFecha(iso) {
+    const d = new Date(iso);
+    const hoy = new Date();
+    const esHoy = d.toDateString() === hoy.toDateString();
+    const hora = d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+    if (esHoy) return `Hoy ${hora}`;
+    return `${d.getDate()}/${d.getMonth()+1} ${hora}`;
+  }
+
+  function tipoLabel(tipo) {
+    const labels = { deslizamiento: 'Deslizamiento', inundacion: 'Inundación', grietas: 'Grietas', arbol: 'Caída de árbol' };
+    return labels[tipo] || tipo;
+  }
+
+  function tipoIcon(tipo) {
+    const icons = { deslizamiento: 'ti-mountain', inundacion: 'ti-droplet', grietas: 'ti-wall', arbol: 'ti-tree' };
+    return icons[tipo] || 'ti-alert-triangle';
+  }
+
+  async function enviarReporte() {
+    if (!currentReport.type) {
+      showToast('Selecciona un tipo de riesgo', 'error');
+      return;
+    }
+    if (!currentReport.location) {
+      showToast('Esperando ubicación GPS...', 'error');
+      pedirUbicacion();
+      return;
+    }
+    const guardado = guardarReporte(currentReport);
+    if (guardado) {
+      vibrate([100, 50, 100]);
+      showToast('Reporte guardado', 'success');
+      // Si tienen permisos, enviar notificación de confirmación
+      if (Notification.permission === 'granted') {
+        enviarNotificacion(
+          '✅ Reporte enviado',
+          `Tu reporte de ${tipoLabel(currentReport.type)} fue registrado`,
+          'check'
+        );
+      }
+      currentReport = { photo: null, type: null, description: '', location: null, address: null };
+      currentScreen = 'inicio';
+      render();
+    } else {
+      showToast('Error al guardar', 'error');
+    }
+  }
+
+  async function pedirUbicacion() {
+    try {
+      const loc = await obtenerUbicacion();
+      currentReport.location = loc;
+      currentReport.address = await obtenerDireccion(loc.lat, loc.lng);
+      render();
+    } catch (e) {
+      showToast(e.message, 'error');
+    }
+  }
+
+  // ============= MAPA REAL =============
+  function inicializarMapa() {
+    setTimeout(() => {
+      const mapDiv = document.getElementById('leaflet-map');
+      if (!mapDiv) return;
+      if (mapInstance) { mapInstance.remove(); mapInstance = null; }
+
+      mapInstance = L.map('leaflet-map', {
+        center: [6.2476, -75.5658],
+        zoom: 12,
+        zoomControl: false
+      });
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap',
+        maxZoom: 19
+      }).addTo(mapInstance);
+
+      L.control.zoom({ position: 'bottomright' }).addTo(mapInstance);
+
+      // Marcadores de riesgo
+      const iconoRojo = L.divIcon({
+        className: 'custom-marker',
+        html: `<div style="width:24px;height:24px;border-radius:50%;background:#A32D2D;border:3px solid #fff;box-shadow:0 0 0 8px rgba(163,45,45,0.3),0 2px 4px rgba(0,0,0,0.3)"></div>`,
+        iconSize: [40, 40], iconAnchor: [20, 20]
+      });
+      L.marker([6.2576, -75.5453], { icon: iconoRojo })
+        .addTo(mapInstance)
+        .bindPopup('<b>Riesgo Alto</b><br/>Comuna 8 · La Honda<br/>Deslizamiento reportado');
+
+      const iconoNaranja = L.divIcon({
+        className: 'custom-marker',
+        html: `<div style="width:20px;height:20px;border-radius:50%;background:#D85A30;border:3px solid #fff;box-shadow:0 0 0 6px rgba(216,90,48,0.3),0 2px 4px rgba(0,0,0,0.3)"></div>`,
+        iconSize: [40, 40], iconAnchor: [20, 20]
+      });
+      L.marker([6.2533, -75.6125], { icon: iconoNaranja })
+        .addTo(mapInstance)
+        .bindPopup('<b>Riesgo Medio</b><br/>Comuna 13 · San Javier<br/>Inundación Quebrada La Iguaná');
+
+      const iconoAmarillo = L.divIcon({
+        className: 'custom-marker',
+        html: `<div style="width:18px;height:18px;border-radius:50%;background:#EF9F27;border:3px solid #fff;box-shadow:0 0 0 5px rgba(239,159,39,0.3),0 2px 4px rgba(0,0,0,0.3)"></div>`,
+        iconSize: [40, 40], iconAnchor: [20, 20]
+      });
+      L.marker([6.2941, -75.5430], { icon: iconoAmarillo })
+        .addTo(mapInstance)
+        .bindPopup('<b>Aviso</b><br/>Comuna 1 · Popular<br/>Lluvias intensas');
+
+      // Refugios
+      const iconoRefugio = L.divIcon({
+        className: 'custom-marker',
+        html: `<div style="width:28px;height:28px;border-radius:6px;background:#1D9E75;border:2px solid #fff;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;box-shadow:0 2px 4px rgba(0,0,0,0.3)">+</div>`,
+        iconSize: [32, 32], iconAnchor: [16, 16]
+      });
+      L.marker([6.2520, -75.5550], { icon: iconoRefugio })
+        .addTo(mapInstance)
+        .bindPopup('<b>Refugio Cancha El Pinar</b><br/>Capacidad: 200 personas');
+      L.marker([6.2410, -75.5905], { icon: iconoRefugio })
+        .addTo(mapInstance)
+        .bindPopup('<b>Refugio Unidad Deportiva</b><br/>Atanasio Girardot');
+
+      // Reportes guardados localmente — los muestra en el mapa
+      const reportes = obtenerReportes();
+      reportes.forEach(r => {
+        if (r.location) {
+          const iconoReporte = L.divIcon({
+            className: 'custom-marker',
+            html: `<div style="width:22px;height:22px;border-radius:50%;background:#185FA5;border:3px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,0.3)"><div style="width:6px;height:6px;background:#fff;border-radius:50%"></div></div>`,
+            iconSize: [30, 30], iconAnchor: [15, 15]
+          });
+          L.marker([r.location.lat, r.location.lng], { icon: iconoReporte })
+            .addTo(mapInstance)
+            .bindPopup(`<b>Tu reporte</b><br/>${tipoLabel(r.type)}<br/><small>${formatearFecha(r.fecha)}</small>`);
+        }
+      });
+
+      // Ubicación del usuario
+      obtenerUbicacion().then(loc => {
+        const iconoUsuario = L.divIcon({
+          className: 'custom-marker',
+          html: `<div style="width:18px;height:18px;border-radius:50%;background:#185FA5;border:3px solid #fff;box-shadow:0 0 0 4px rgba(24,95,165,0.3),0 2px 6px rgba(0,0,0,0.4)"></div>`,
+          iconSize: [30, 30], iconAnchor: [15, 15]
+        });
+        userLocationMarker = L.marker([loc.lat, loc.lng], { icon: iconoUsuario })
+          .addTo(mapInstance)
+          .bindPopup('<b>Tu ubicación</b>');
+        if (Math.abs(loc.lat - 6.2476) < 0.5) {
+          mapInstance.setView([loc.lat, loc.lng], 14);
+        }
+      }).catch(() => {});
+    }, 100);
+  }
+
+  function centrarEnUsuario() {
+    if (!mapInstance) return;
+    obtenerUbicacion().then(loc => {
+      mapInstance.setView([loc.lat, loc.lng], 16);
+      if (userLocationMarker) userLocationMarker.setLatLng([loc.lat, loc.lng]);
+      vibrate(30);
+    }).catch(e => showToast(e.message, 'error'));
+  }
 
   // ============= TAB BARS =============
   const tabBarStandard = (active) => `
@@ -223,24 +528,42 @@ input, button { font-size: 16px; } /* evita zoom en iOS al hacer focus */
       <div class="tab-icon ${active==='inicio'?'active':''}" data-nav="inicio"><i class="ti ti-home" style="font-size:22px"></i><span>Inicio</span></div>
       <div class="tab-icon ${active==='alertas'?'active':''}" data-nav="alertas"><i class="ti ti-bell" style="font-size:22px"></i><span>Alertas</span></div>
       <div class="tab-icon ${active==='mapa'?'active':''}" data-nav="mapa"><i class="ti ti-map-2" style="font-size:22px"></i><span>Mapa</span></div>
+      <div class="tab-icon ${active==='reportes'?'active':''}" data-nav="reportes"><i class="ti ti-file-text" style="font-size:22px"></i><span>Reportes</span></div>
       <div class="tab-icon ${active==='ayuda'?'active':''}" data-nav="ayuda"><i class="ti ti-lifebuoy" style="font-size:22px"></i><span>Ayuda</span></div>
     </div>`;
 
   const tabBarSenior = (active) => `
     <div class="tab-bar" style="padding:12px 0 max(14px,env(safe-area-inset-bottom))">
-      <div class="tab-icon ${active==='inicio'?'active':''}" data-nav="inicio"><i class="ti ti-home" style="font-size:30px"></i><span style="font-size:13px;font-weight:500">Inicio</span></div>
-      <div class="tab-icon ${active==='alertas'?'active':''}" data-nav="alertas"><i class="ti ti-bell" style="font-size:30px"></i><span style="font-size:13px;font-weight:500">Alertas</span></div>
-      <div class="tab-icon ${active==='mapa'?'active':''}" data-nav="mapa"><i class="ti ti-map-2" style="font-size:30px"></i><span style="font-size:13px;font-weight:500">Mapa</span></div>
-      <div class="tab-icon ${active==='ayuda'?'active':''}" data-nav="ayuda"><i class="ti ti-lifebuoy" style="font-size:30px"></i><span style="font-size:13px;font-weight:500">Ayuda</span></div>
+      <div class="tab-icon ${active==='inicio'?'active':''}" data-nav="inicio"><i class="ti ti-home" style="font-size:28px"></i><span style="font-size:12px;font-weight:500">Inicio</span></div>
+      <div class="tab-icon ${active==='alertas'?'active':''}" data-nav="alertas"><i class="ti ti-bell" style="font-size:28px"></i><span style="font-size:12px;font-weight:500">Alertas</span></div>
+      <div class="tab-icon ${active==='mapa'?'active':''}" data-nav="mapa"><i class="ti ti-map-2" style="font-size:28px"></i><span style="font-size:12px;font-weight:500">Mapa</span></div>
+      <div class="tab-icon ${active==='ayuda'?'active':''}" data-nav="ayuda"><i class="ti ti-lifebuoy" style="font-size:28px"></i><span style="font-size:12px;font-weight:500">Ayuda</span></div>
     </div>`;
 
-  // ============= MODO ESTÁNDAR =============
-  const standardInicio = `
+  // ============= PANTALLAS =============
+  function renderInicio() {
+    const reportesCount = obtenerReportes().length;
+    const notifPerm = getNotifPermission();
+    const mostrarBannerNotif = notifPerm === 'default';
+
+    return `
     <div style="padding:60px 16px 20px;">
+      ${mostrarBannerNotif ? `
+        <div class="notif-banner" style="margin:0 -16px 16px;border-radius:0">
+          <i class="ti ti-bell-ringing" style="font-size:20px"></i>
+          <div style="flex:1">
+            <p style="margin:0;font-weight:600">Activa notificaciones</p>
+            <p style="margin:2px 0 0;font-size:11px;opacity:0.85">Recibe alertas aunque la app esté cerrada</p>
+          </div>
+          <button data-action="enable-notifs">Activar</button>
+        </div>
+      ` : ''}
+
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
         <div style="width:36px;height:36px;border-radius:10px;background:#A32D2D;display:flex;align-items:center;justify-content:center"><i class="ti ti-shield-check" style="color:#fff;font-size:20px"></i></div>
-        <div><p style="margin:0;font-size:15px;font-weight:600">SOS Medellín</p><p style="margin:0;font-size:12px;color:#5f5e5a">Comuna 8 · Villa Hermosa</p></div>
+        <div><p style="margin:0;font-size:15px;font-weight:600">SOS Medellín</p><p style="margin:0;font-size:12px;color:#5f5e5a">Tu zona segura</p></div>
       </div>
+
       <div style="background:#FAEEDA;border-radius:14px;padding:16px;margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;margin-bottom:10px">
           <p class="section-title" style="color:#854F0B;margin:0">Estado de tu zona</p>
@@ -250,16 +573,13 @@ input, button { font-size: 16px; } /* evita zoom en iOS al hacer focus */
           <div style="width:14px;height:14px;border-radius:50%;background:#EF9F27;box-shadow:0 0 0 4px rgba(239,159,39,.2)"></div>
           <p style="margin:0;font-size:20px;font-weight:600;color:#633806">Riesgo medio</p>
         </div>
-        <p style="margin:0;font-size:13px;color:#854F0B;line-height:1.5">Lluvias persistentes en la zona oriental. Mantente atento y evita laderas.</p>
-        <div style="display:flex;gap:12px;margin-top:10px;font-size:12px;color:#854F0B">
-          <span><i class="ti ti-cloud-rain" style="font-size:14px;vertical-align:-2px"></i> 18 mm/h</span>
-          <span><i class="ti ti-temperature" style="font-size:14px;vertical-align:-2px"></i> 21°C</span>
-          <span><i class="ti ti-wind" style="font-size:14px;vertical-align:-2px"></i> 12 km/h</span>
-        </div>
+        <p style="margin:0;font-size:13px;color:#854F0B;line-height:1.5">Lluvias persistentes en la zona oriental.</p>
       </div>
+
       <button class="big-btn btn-emergency" style="margin-bottom:12px;font-size:17px;padding:18px" data-nav="reportar">
         <i class="ti ti-alert-triangle" style="font-size:24px"></i> Reportar riesgo
       </button>
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
         <div class="action-card" data-nav="alertas">
           <div style="width:36px;height:36px;border-radius:10px;background:#FCEBEB;display:flex;align-items:center;justify-content:center"><i class="ti ti-bell-ringing" style="color:#A32D2D;font-size:18px"></i></div>
@@ -270,15 +590,16 @@ input, button { font-size: 16px; } /* evita zoom en iOS al hacer focus */
           <div><p style="margin:0;font-size:13px;font-weight:600">Mapa</p><p style="margin:0;font-size:11px;color:#5f5e5a">Ver zona</p></div>
         </div>
       </div>
-      <p class="section-title">Comunidad cercana</p>
-      <div style="background:#fff;border-radius:10px;border:0.5px solid rgba(0,0,0,0.1);padding:12px">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-          <i class="ti ti-users" style="font-size:14px;color:#5f5e5a"></i>
-          <span style="font-size:12px;color:#5f5e5a">12 vecinos conectados</span>
+
+      ${reportesCount > 0 ? `
+        <div class="action-card" data-nav="reportes" style="border:0.5px solid #185FA5;background:#E6F1FB">
+          <div style="width:36px;height:36px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center"><i class="ti ti-file-text" style="color:#185FA5;font-size:18px"></i></div>
+          <div style="flex:1"><p style="margin:0;font-size:13px;font-weight:600">Mis reportes</p><p style="margin:0;font-size:11px;color:#5f5e5a">${reportesCount} guardado${reportesCount>1?'s':''}</p></div>
+          <i class="ti ti-chevron-right" style="font-size:18px;color:#185FA5"></i>
         </div>
-        <p style="margin:0;font-size:13px;line-height:1.5">"Vi grietas nuevas en la cra 49. Tengan cuidado al pasar." — María L.</p>
-      </div>
+      ` : ''}
     </div>`;
+  }
 
   const standardAlertas = `
     <div style="padding:60px 16px 20px;">
@@ -286,21 +607,16 @@ input, button { font-size: 16px; } /* evita zoom en iOS al hacer focus */
         <p style="margin:0;font-size:18px;font-weight:600">Alertas activas</p>
         <p style="margin:0;font-size:12px;color:#5f5e5a">Actualizado hace 2 min</p>
       </div>
-      <div style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto">
-        <span class="risk-pill risk-red" style="white-space:nowrap"><i class="ti ti-circle-filled" style="font-size:8px"></i> Rojo · 1</span>
-        <span class="risk-pill risk-orange" style="white-space:nowrap"><i class="ti ti-circle-filled" style="font-size:8px"></i> Naranja · 1</span>
-        <span class="risk-pill risk-yellow" style="white-space:nowrap"><i class="ti ti-circle-filled" style="font-size:8px"></i> Amarillo · 1</span>
-      </div>
       <div class="alert-item" style="background:#FCEBEB;border-color:#A32D2D">
         <div style="display:flex;justify-content:space-between;margin-bottom:6px">
           <span style="font-size:11px;font-weight:600;color:#791F1F;text-transform:uppercase;letter-spacing:.4px">Crítico · Evacuar</span>
           <span style="font-size:11px;color:#791F1F">14:32</span>
         </div>
         <p style="margin:0 0 4px;font-size:14px;font-weight:600;color:#501313">Riesgo alto de deslizamiento</p>
-        <p style="margin:0 0 10px;font-size:12px;color:#791F1F;line-height:1.5">Comuna 8, La Honda. Cra 49 con Cl 95. Diríjase al punto de encuentro: Cancha El Pinar.</p>
+        <p style="margin:0 0 10px;font-size:12px;color:#791F1F;line-height:1.5">Comuna 8, La Honda. Diríjase a Cancha El Pinar.</p>
         <div style="display:flex;gap:6px">
           <button data-nav="mapa" style="flex:1;padding:8px;font-size:12px;background:#A32D2D;color:#fff;border:0;border-radius:8px;font-weight:500"><i class="ti ti-route" style="font-size:13px;vertical-align:-2px"></i> Ver ruta</button>
-          <button style="flex:1;padding:8px;font-size:12px;background:#fff;color:#791F1F;border:0.5px solid #A32D2D;border-radius:8px;font-weight:500">Estoy a salvo</button>
+          <button data-action="safe" style="flex:1;padding:8px;font-size:12px;background:#fff;color:#791F1F;border:0.5px solid #A32D2D;border-radius:8px;font-weight:500">Estoy a salvo</button>
         </div>
       </div>
       <div class="alert-item" style="background:#FAECE7;border-color:#D85A30">
@@ -317,147 +633,197 @@ input, button { font-size: 16px; } /* evita zoom en iOS al hacer focus */
           <span style="font-size:11px;color:#854F0B">11:48</span>
         </div>
         <p style="margin:0 0 4px;font-size:14px;font-weight:600;color:#412402">Lluvias intensas próximas 6h</p>
-        <p style="margin:0;font-size:12px;color:#854F0B;line-height:1.5">IDEAM pronostica 35 mm acumulados. Prepare kit de emergencia.</p>
-      </div>
-      <p class="section-title" style="margin-top:16px">Mensajes comunidad</p>
-      <div style="background:#075E54;border-radius:10px;padding:10px">
-        <div style="display:flex;flex-direction:column;gap:6px">
-          <div class="chat-bubble chat-in"><strong style="font-size:11px;color:#185FA5">DAGRD oficial</strong><br/>Equipos en camino al sector La Honda.</div>
-          <div class="chat-bubble chat-out">Hay 3 familias afectadas en la casa #45</div>
-          <div class="chat-bubble chat-in"><strong style="font-size:11px;color:#27500A">Líder comunal</strong><br/>Cancha El Pinar abierta como refugio</div>
-        </div>
+        <p style="margin:0;font-size:12px;color:#854F0B;line-height:1.5">IDEAM pronostica 35 mm acumulados.</p>
       </div>
     </div>`;
 
   const standardMapa = `
     <div style="height:100%;display:flex;flex-direction:column">
-      <div style="padding:60px 14px 12px;background:#fff;border-bottom:0.5px solid rgba(0,0,0,0.1);display:flex;align-items:center;gap:8px">
-        <i class="ti ti-search" style="font-size:18px;color:#5f5e5a"></i>
-        <span style="font-size:13px;color:#5f5e5a">Buscar zona o comuna...</span>
+      <div style="padding:60px 14px 12px;background:#fff;border-bottom:0.5px solid rgba(0,0,0,0.1);display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <p style="margin:0;font-size:16px;font-weight:600">Mapa de Medellín</p>
+          <p style="margin:2px 0 0;font-size:11px;color:#5f5e5a">Toca los marcadores para info</p>
+        </div>
+        <button data-action="locate" style="background:#185FA5;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:12px;display:flex;align-items:center;gap:6px;font-weight:500">
+          <i class="ti ti-current-location" style="font-size:16px"></i> Mi ubicación
+        </button>
       </div>
-      <div style="flex:1;position:relative;overflow:hidden">
-        ${mapaMedellin(false)}
-        <div style="position:absolute;top:12px;right:12px;display:flex;flex-direction:column;gap:8px">
-          <button style="width:40px;height:40px;border-radius:10px;border:0.5px solid rgba(0,0,0,0.1);background:#fff"><i class="ti ti-plus" style="font-size:18px"></i></button>
-          <button style="width:40px;height:40px;border-radius:10px;border:0.5px solid rgba(0,0,0,0.1);background:#fff"><i class="ti ti-minus" style="font-size:18px"></i></button>
-          <button style="width:40px;height:40px;border-radius:10px;border:0.5px solid rgba(0,0,0,0.1);background:#fff"><i class="ti ti-current-location" style="font-size:18px;color:#185FA5"></i></button>
-        </div>
-        <div style="position:absolute;bottom:12px;left:12px;background:#fff;border-radius:10px;padding:10px 12px;border:0.5px solid rgba(0,0,0,0.1)">
-          <p style="margin:0 0 6px;font-size:11px;font-weight:600;text-transform:uppercase;color:#5f5e5a">Medellín</p>
-          <div style="display:flex;flex-direction:column;gap:4px;font-size:11px">
-            <span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:50%;background:#A32D2D"></span> Riesgo alto</span>
-            <span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:50%;background:#D85A30"></span> Riesgo medio</span>
-            <span style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:50%;background:#1D9E75"></span> Refugio</span>
-          </div>
-        </div>
-      </div>
-      <div style="background:#fff;border-top:0.5px solid rgba(0,0,0,0.1);padding:12px 16px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-          <span style="font-size:14px;font-weight:600">Sector La Honda · Comuna 8</span>
-          <span class="risk-pill risk-red" style="font-size:10px">Alto</span>
-        </div>
-        <p style="margin:0;font-size:12px;color:#5f5e5a">Refugio Cancha El Pinar a 320 m · 4 min caminando</p>
+      <div style="flex:1;position:relative">
+        <div id="leaflet-map"></div>
       </div>
     </div>`;
 
-  const standardReportar = `
+  function renderReportes() {
+    const reportes = obtenerReportes();
+    return `
+    <div style="padding:60px 16px 20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <button data-nav="inicio" style="background:transparent;border:0;padding:0"><i class="ti ti-arrow-left" style="font-size:24px"></i></button>
+        <p style="margin:0;font-size:18px;font-weight:600">Mis reportes</p>
+      </div>
+      ${reportes.length === 0 ? `
+        <div style="text-align:center;padding:40px 20px">
+          <div style="width:72px;height:72px;border-radius:50%;background:#f5f4ee;margin:0 auto 14px;display:flex;align-items:center;justify-content:center"><i class="ti ti-file-text" style="font-size:36px;color:#888780"></i></div>
+          <p style="margin:0 0 6px;font-size:15px;font-weight:600">Sin reportes aún</p>
+          <p style="margin:0 0 18px;font-size:13px;color:#5f5e5a">Cuando reportes un riesgo aparecerá aquí</p>
+          <button data-nav="reportar" class="big-btn btn-emergency" style="font-size:14px"><i class="ti ti-alert-triangle"></i> Crear reporte</button>
+        </div>
+      ` : reportes.map(r => `
+        <div style="background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:12px;margin-bottom:10px">
+          <div style="display:flex;align-items:start;gap:10px">
+            ${r.photo ? `<img src="${r.photo}" style="width:60px;height:60px;border-radius:8px;object-fit:cover;flex-shrink:0"/>` : `
+              <div style="width:60px;height:60px;border-radius:8px;background:#FCEBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ${tipoIcon(r.type)}" style="color:#A32D2D;font-size:26px"></i></div>
+            `}
+            <div style="flex:1;min-width:0">
+              <p style="margin:0 0 2px;font-size:14px;font-weight:600">${tipoLabel(r.type)}</p>
+              <p style="margin:0 0 2px;font-size:11px;color:#5f5e5a">${formatearFecha(r.fecha)}</p>
+              <p style="margin:0;font-size:11px;color:#5f5e5a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><i class="ti ti-map-pin" style="font-size:11px"></i> ${r.address || 'Sin ubicación'}</p>
+              ${r.description ? `<p style="margin:6px 0 0;font-size:12px;color:#1a1a1a;line-height:1.4">${r.description}</p>` : ''}
+            </div>
+            <button data-action="delete-report" data-id="${r.id}" style="background:transparent;border:0;padding:4px;color:#888780"><i class="ti ti-trash" style="font-size:18px"></i></button>
+          </div>
+        </div>
+      `).join('')}
+      ${reportes.length > 0 ? `
+        <button data-action="clear-all" style="width:100%;padding:12px;background:transparent;border:0.5px solid #A32D2D;color:#A32D2D;border-radius:10px;font-size:13px;font-weight:500;margin-top:10px">
+          Borrar todos los reportes
+        </button>
+      ` : ''}
+    </div>`;
+  }
+
+  function renderReportar() {
+    const tipos = [
+      { id: 'deslizamiento', label: 'Deslizamiento', icon: 'ti-mountain', color: '#854F0B' },
+      { id: 'inundacion', label: 'Inundación', icon: 'ti-droplet', color: '#185FA5' },
+      { id: 'grietas', label: 'Grietas', icon: 'ti-wall', color: '#854F0B' },
+      { id: 'arbol', label: 'Caída árbol', icon: 'ti-tree', color: '#27500A' }
+    ];
+
+    return `
     <div style="padding:60px 16px 20px;">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
         <button data-nav="inicio" style="background:transparent;border:0;padding:0"><i class="ti ti-arrow-left" style="font-size:24px"></i></button>
         <p style="margin:0;font-size:18px;font-weight:600">Reportar riesgo</p>
       </div>
-      <div style="border:1.5px dashed rgba(0,0,0,0.2);border-radius:12px;padding:28px;text-align:center;margin-bottom:14px;background:#f5f4ee">
-        <i class="ti ti-camera-plus" style="font-size:36px;color:#5f5e5a"></i>
-        <p style="margin:8px 0 2px;font-size:13px;font-weight:600">Tomar foto del riesgo</p>
-        <p style="margin:0;font-size:11px;color:#5f5e5a">Toca para abrir cámara</p>
-      </div>
+      ${currentReport.photo ? `
+        <div style="position:relative;margin-bottom:14px">
+          <img src="${currentReport.photo}" class="photo-preview"/>
+          <button data-action="retake" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;border:0;border-radius:8px;padding:6px 10px;font-size:11px;display:flex;align-items:center;gap:4px">
+            <i class="ti ti-refresh" style="font-size:14px"></i> Repetir
+          </button>
+        </div>
+      ` : `
+        <button data-action="camera" style="border:1.5px dashed rgba(0,0,0,0.2);border-radius:12px;padding:28px;text-align:center;margin-bottom:14px;background:#f5f4ee;width:100%;display:flex;flex-direction:column;align-items:center;gap:6px">
+          <i class="ti ti-camera-plus" style="font-size:36px;color:#5f5e5a"></i>
+          <p style="margin:0;font-size:13px;font-weight:600">Tomar foto del riesgo</p>
+          <p style="margin:0;font-size:11px;color:#5f5e5a">Toca para abrir cámara</p>
+        </button>
+      `}
       <p class="section-title">Tipo de riesgo</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
-        <div class="report-type selected"><i class="ti ti-mountain" style="font-size:18px"></i> Deslizamiento</div>
-        <div class="report-type"><i class="ti ti-droplet" style="font-size:18px;color:#185FA5"></i> Inundación</div>
-        <div class="report-type"><i class="ti ti-wall" style="font-size:18px;color:#854F0B"></i> Grietas</div>
-        <div class="report-type"><i class="ti ti-tree" style="font-size:18px;color:#27500A"></i> Caída árbol</div>
+        ${tipos.map(t => `
+          <div class="report-type ${currentReport.type===t.id?'selected':''}" data-action="set-type" data-type="${t.id}">
+            <i class="ti ${t.icon}" style="font-size:18px;color:${t.color}"></i> ${t.label}
+          </div>
+        `).join('')}
       </div>
-      <p class="section-title">Descripción</p>
-      <div style="background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;padding:12px;margin-bottom:14px;min-height:64px">
-        <p style="margin:0;font-size:13px;color:#5f5e5a;font-style:italic">Hay grietas grandes en la pared de contención...</p>
-      </div>
+      <p class="section-title">Descripción (opcional)</p>
+      <textarea id="report-description" placeholder="Describe brevemente el riesgo..." style="width:100%;background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;padding:12px;margin-bottom:14px;min-height:64px;font-size:14px;resize:none">${currentReport.description}</textarea>
       <p class="section-title">Ubicación</p>
       <div style="background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;padding:12px;margin-bottom:18px;display:flex;align-items:center;gap:10px">
-        <i class="ti ti-map-pin-filled" style="font-size:20px;color:#A32D2D"></i>
-        <div style="flex:1"><p style="margin:0;font-size:13px;font-weight:600">Cra 49 #95-12, Villa Hermosa</p><p style="margin:0;font-size:11px;color:#1D9E75"><i class="ti ti-circle-filled" style="font-size:6px"></i> Detectada · ±5m</p></div>
+        <i class="ti ti-map-pin-filled" style="font-size:20px;color:${currentReport.location?'#A32D2D':'#888780'}"></i>
+        <div style="flex:1">
+          ${currentReport.location ? `
+            <p style="margin:0;font-size:13px;font-weight:600">${currentReport.address || 'Ubicación detectada'}</p>
+            <p style="margin:0;font-size:11px;color:#1D9E75"><i class="ti ti-circle-filled" style="font-size:6px"></i> ±${Math.round(currentReport.location.accuracy)}m</p>
+          ` : `
+            <p style="margin:0;font-size:13px;font-weight:600">Sin ubicación</p>
+            <p style="margin:0;font-size:11px;color:#888780">Toca para detectar</p>
+          `}
+        </div>
+        <button data-action="get-location" style="background:#185FA5;color:#fff;border:0;border-radius:8px;padding:8px 10px;font-size:11px;font-weight:500">
+          ${currentReport.location ? 'Actualizar' : 'Detectar'}
+        </button>
       </div>
-      <button class="big-btn btn-emergency" style="font-size:16px;padding:16px"><i class="ti ti-send" style="font-size:20px"></i> Enviar reporte</button>
-      <p style="margin:10px 0 0;font-size:11px;color:#5f5e5a;text-align:center">Tu reporte llegará al DAGRD en menos de 30 segundos</p>
+      <button class="big-btn btn-emergency" style="font-size:16px;padding:16px" data-action="send-report">
+        <i class="ti ti-send" style="font-size:20px"></i> Enviar reporte
+      </button>
+      <p style="margin:10px 0 0;font-size:11px;color:#5f5e5a;text-align:center">El reporte se guardará en tu teléfono</p>
     </div>`;
+  }
 
   const standardAyuda = `
     <div style="padding:60px 16px 20px;">
       <p style="margin:0 0 4px;font-size:18px;font-weight:600">Centro de ayuda</p>
       <p style="margin:0 0 16px;font-size:12px;color:#5f5e5a">Información clave para emergencias</p>
-      <button class="big-btn" style="background:#A32D2D;color:#fff;margin-bottom:16px;padding:16px;font-size:15px">
-        <i class="ti ti-phone-call" style="font-size:20px"></i> Llamar línea 123
+      <button class="big-btn" style="background:#A32D2D;color:#fff;margin-bottom:16px;padding:16px;font-size:15px" data-action="show-phone" data-number="123" data-name="DAGRD Medellín">
+        <i class="ti ti-phone-call" style="font-size:20px"></i> Línea 123
       </button>
       <p class="section-title">Contactos de emergencia</p>
-      <div class="help-card">
+      <div class="help-card" data-action="show-phone" data-number="123" data-name="DAGRD Medellín">
         <div style="width:36px;height:36px;border-radius:50%;background:#FCEBEB;display:flex;align-items:center;justify-content:center"><i class="ti ti-shield" style="color:#A32D2D;font-size:18px"></i></div>
         <div style="flex:1"><p style="margin:0;font-size:13px;font-weight:600">DAGRD Medellín</p><p style="margin:0;font-size:11px;color:#5f5e5a">123 · Disponible 24h</p></div>
-        <i class="ti ti-phone" style="font-size:18px;color:#1D9E75"></i>
+        <i class="ti ti-chevron-right" style="font-size:18px;color:#5f5e5a"></i>
       </div>
-      <div class="help-card">
+      <div class="help-card" data-action="show-phone" data-number="119" data-name="Bomberos">
         <div style="width:36px;height:36px;border-radius:50%;background:#FAECE7;display:flex;align-items:center;justify-content:center"><i class="ti ti-flame" style="color:#D85A30;font-size:18px"></i></div>
         <div style="flex:1"><p style="margin:0;font-size:13px;font-weight:600">Bomberos</p><p style="margin:0;font-size:11px;color:#5f5e5a">119</p></div>
-        <i class="ti ti-phone" style="font-size:18px;color:#1D9E75"></i>
+        <i class="ti ti-chevron-right" style="font-size:18px;color:#5f5e5a"></i>
       </div>
-      <div class="help-card">
+      <div class="help-card" data-action="show-phone" data-number="132" data-name="Cruz Roja">
         <div style="width:36px;height:36px;border-radius:50%;background:#FCEBEB;display:flex;align-items:center;justify-content:center"><i class="ti ti-ambulance" style="color:#A32D2D;font-size:18px"></i></div>
         <div style="flex:1"><p style="margin:0;font-size:13px;font-weight:600">Cruz Roja</p><p style="margin:0;font-size:11px;color:#5f5e5a">132</p></div>
-        <i class="ti ti-phone" style="font-size:18px;color:#1D9E75"></i>
+        <i class="ti ti-chevron-right" style="font-size:18px;color:#5f5e5a"></i>
       </div>
       <p class="section-title" style="margin-top:16px">Qué hacer en caso de...</p>
       <div class="help-card">
         <div style="width:40px;height:40px;border-radius:10px;background:#FAEEDA;display:flex;align-items:center;justify-content:center"><i class="ti ti-mountain" style="color:#854F0B;font-size:20px"></i></div>
-        <div style="flex:1"><p style="margin:0;font-size:13px;font-weight:600">Deslizamiento</p><p style="margin:0;font-size:11px;color:#5f5e5a">Guía paso a paso</p></div>
-        <i class="ti ti-chevron-right" style="font-size:18px;color:#5f5e5a"></i>
+        <div style="flex:1"><p style="margin:0;font-size:13px;font-weight:600">Deslizamiento</p><p style="margin:0;font-size:11px;color:#5f5e5a">Aléjate de laderas y muros</p></div>
       </div>
       <div class="help-card">
         <div style="width:40px;height:40px;border-radius:10px;background:#E6F1FB;display:flex;align-items:center;justify-content:center"><i class="ti ti-droplet" style="color:#185FA5;font-size:20px"></i></div>
-        <div style="flex:1"><p style="margin:0;font-size:13px;font-weight:600">Inundación</p><p style="margin:0;font-size:11px;color:#5f5e5a">Guía paso a paso</p></div>
-        <i class="ti ti-chevron-right" style="font-size:18px;color:#5f5e5a"></i>
+        <div style="flex:1"><p style="margin:0;font-size:13px;font-weight:600">Inundación</p><p style="margin:0;font-size:11px;color:#5f5e5a">Busca zonas altas, no cruces corrientes</p></div>
       </div>
       <div class="help-card">
         <div style="width:40px;height:40px;border-radius:10px;background:#EAF3DE;display:flex;align-items:center;justify-content:center"><i class="ti ti-first-aid-kit" style="color:#27500A;font-size:20px"></i></div>
-        <div style="flex:1"><p style="margin:0;font-size:13px;font-weight:600">Kit de emergencia</p><p style="margin:0;font-size:11px;color:#5f5e5a">Lista de elementos</p></div>
+        <div style="flex:1"><p style="margin:0;font-size:13px;font-weight:600">Kit de emergencia</p><p style="margin:0;font-size:11px;color:#5f5e5a">Agua, linterna, radio, documentos</p></div>
+      </div>
+
+      <p class="section-title" style="margin-top:16px">Notificaciones</p>
+      <div class="help-card" data-action="enable-notifs">
+        <div style="width:40px;height:40px;border-radius:10px;background:#E6F1FB;display:flex;align-items:center;justify-content:center"><i class="ti ti-bell-ringing" style="color:#185FA5;font-size:20px"></i></div>
+        <div style="flex:1">
+          <p style="margin:0;font-size:13px;font-weight:600">Activar notificaciones</p>
+          <p style="margin:0;font-size:11px;color:#5f5e5a">${getNotifPermission() === 'granted' ? '✓ Activadas' : 'Recibe alertas en tu teléfono'}</p>
+        </div>
         <i class="ti ti-chevron-right" style="font-size:18px;color:#5f5e5a"></i>
       </div>
     </div>`;
 
   // ============= MODO SÉNIOR =============
-  const seniorInicio = `
+  function renderSeniorInicio() {
+    return `
     <div style="padding:60px 18px 20px;background:#fffef9;min-height:100%">
-      <div style="text-align:center;margin-bottom:18px">
-        <p style="margin:0;font-size:17px;color:#5f5e5a">Hola, Don Carlos</p>
-      </div>
+      <div style="text-align:center;margin-bottom:18px"><p style="margin:0;font-size:17px;color:#5f5e5a">Hola</p></div>
       <div style="background:#FAEEDA;border:3px solid #EF9F27;border-radius:18px;padding:20px;margin-bottom:18px;text-align:center">
         <div style="width:64px;height:64px;border-radius:50%;background:#EF9F27;margin:0 auto 12px;display:flex;align-items:center;justify-content:center">
           <i class="ti ti-alert-triangle" style="color:#fff;font-size:38px"></i>
         </div>
         <p style="margin:0 0 8px;font-size:26px;font-weight:600;color:#412402">Cuidado</p>
-        <p style="margin:0 0 12px;font-size:17px;color:#633806;line-height:1.4">Está lloviendo fuerte<br/>en su barrio</p>
-        <button style="background:#fff;border:2px solid #854F0B;color:#412402;padding:12px 20px;border-radius:12px;font-size:15px;font-weight:600;display:inline-flex;align-items:center;gap:8px">
-          <i class="ti ti-volume" style="font-size:20px"></i> Escuchar
-        </button>
+        <p style="margin:0;font-size:17px;color:#633806;line-height:1.4">Está lloviendo fuerte<br/>en su barrio</p>
       </div>
       <button data-nav="reportar" style="width:100%;padding:26px;background:#A32D2D;color:#fff;border:0;border-radius:16px;font-size:24px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:14px">
         <i class="ti ti-camera" style="font-size:36px"></i>Avisar peligro
       </button>
-      <button style="width:100%;padding:22px;background:#185FA5;color:#fff;border:0;border-radius:16px;font-size:22px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:14px">
+      <button data-action="show-phone" data-number="123" data-name="DAGRD Medellín" style="width:100%;padding:22px;background:#185FA5;color:#fff;border:0;border-radius:16px;font-size:22px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:14px">
         <i class="ti ti-phone-call" style="font-size:32px"></i>Llamar al 123
       </button>
       <button data-nav="mapa" style="width:100%;padding:22px;background:#fff;color:#1a1a1a;border:2px solid #888780;border-radius:16px;font-size:22px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:14px">
         <i class="ti ti-map-2" style="font-size:32px"></i>Ver el mapa
       </button>
     </div>`;
+  }
 
   const seniorAlertas = `
     <div style="padding:60px 18px 20px;background:#fffef9;min-height:100%">
@@ -468,157 +834,164 @@ input, button { font-size: 16px; } /* evita zoom en iOS al hacer focus */
         </div>
         <p style="margin:0 0 8px;font-size:26px;font-weight:600;color:#501313">¡Peligro!</p>
         <p style="margin:0 0 16px;font-size:19px;color:#791F1F;line-height:1.4">Salga de su casa.<br/>Vaya a la cancha El Pinar.</p>
-        <button data-nav="mapa" style="width:100%;padding:20px;background:#A32D2D;color:#fff;border:0;border-radius:14px;font-size:22px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px">
+        <button data-nav="mapa" style="width:100%;padding:20px;background:#A32D2D;color:#fff;border:0;border-radius:14px;font-size:22px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:12px">
           <i class="ti ti-route" style="font-size:28px"></i> Ver cómo llegar
         </button>
-        <button style="width:100%;padding:16px;background:#fff;color:#791F1F;border:2px solid #A32D2D;border-radius:14px;font-size:18px;font-weight:600">
-          Estoy a salvo
-        </button>
       </div>
-      <div style="background:#FAECE7;border:3px solid #D85A30;border-radius:18px;padding:20px;margin-bottom:16px;text-align:center">
+      <div style="background:#FAECE7;border:3px solid #D85A30;border-radius:18px;padding:20px;text-align:center">
         <div style="width:64px;height:64px;border-radius:50%;background:#D85A30;margin:0 auto 12px;display:flex;align-items:center;justify-content:center">
           <i class="ti ti-droplet" style="color:#fff;font-size:36px"></i>
         </div>
         <p style="margin:0 0 8px;font-size:22px;font-weight:600;color:#4A1B0C">Cuidado con el agua</p>
-        <p style="margin:0;font-size:17px;color:#993C1D;line-height:1.4">La quebrada se desbordó.<br/>No pase por San Javier.</p>
+        <p style="margin:0;font-size:17px;color:#993C1D;line-height:1.4">La quebrada se desbordó.</p>
       </div>
-      <div style="background:#FAEEDA;border:3px solid #BA7517;border-radius:18px;padding:20px;text-align:center">
-        <div style="width:64px;height:64px;border-radius:50%;background:#BA7517;margin:0 auto 12px;display:flex;align-items:center;justify-content:center">
-          <i class="ti ti-cloud-rain" style="color:#fff;font-size:36px"></i>
-        </div>
-        <p style="margin:0 0 8px;font-size:22px;font-weight:600;color:#412402">Va a llover fuerte</p>
-        <p style="margin:0;font-size:17px;color:#854F0B;line-height:1.4">En las próximas 6 horas.<br/>Tenga lista su mochila.</p>
-      </div>
-    </div>`;
-
-  const seniorMapa = `
-    <div style="height:100%;display:flex;flex-direction:column;background:#fffef9">
-      <div style="padding:60px 18px 16px;background:#fff;border-bottom:2px solid #888780">
-        <p style="margin:0;font-size:22px;font-weight:600">Mapa de Medellín</p>
-        <p style="margin:4px 0 0;font-size:15px;color:#5f5e5a">Su ubicación: Comuna 8</p>
-      </div>
-      <div style="flex:1;position:relative;overflow:hidden">
-        ${mapaMedellinSenior}
-      </div>
-      <div style="background:#fff;border-top:2px solid #888780;padding:14px 16px">
-        <p style="margin:0 0 4px;font-size:19px;font-weight:600">Refugio cercano</p>
-        <p style="margin:0 0 12px;font-size:16px;color:#5f5e5a">A 5 minutos caminando</p>
-        <button style="width:100%;padding:16px;background:#1D9E75;color:#fff;border:0;border-radius:12px;font-size:19px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:10px">
-          <i class="ti ti-walk" style="font-size:24px"></i> Ir al refugio
-        </button>
-      </div>
-    </div>`;
-
-  const seniorReportar = `
-    <div style="padding:60px 18px 20px;background:#fffef9;min-height:100%">
-      <button data-nav="inicio" style="background:#fff;border:2px solid #888780;border-radius:14px;padding:14px 18px;font-size:19px;display:flex;align-items:center;gap:12px;margin-bottom:16px;font-weight:600">
-        <i class="ti ti-arrow-left" style="font-size:24px"></i>Volver
-      </button>
-      <p style="margin:0 0 4px;font-size:16px;color:#5f5e5a">Paso 1 de 2</p>
-      <p style="margin:0 0 18px;font-size:26px;font-weight:600;line-height:1.3">¿Qué está pasando?</p>
-      <button style="width:100%;padding:20px;background:#fff;border:2px solid #888780;border-radius:16px;margin-bottom:12px;display:flex;align-items:center;gap:16px;text-align:left">
-        <div style="width:64px;height:64px;border-radius:14px;background:#FAEEDA;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-mountain" style="color:#854F0B;font-size:36px"></i>
-        </div>
-        <div><p style="margin:0;font-size:22px;font-weight:600">Tierra cayendo</p><p style="margin:2px 0 0;font-size:15px;color:#5f5e5a">Deslizamiento</p></div>
-      </button>
-      <button style="width:100%;padding:20px;background:#fff;border:2px solid #888780;border-radius:16px;margin-bottom:12px;display:flex;align-items:center;gap:16px;text-align:left">
-        <div style="width:64px;height:64px;border-radius:14px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-droplet" style="color:#185FA5;font-size:36px"></i>
-        </div>
-        <div><p style="margin:0;font-size:22px;font-weight:600">Mucha agua</p><p style="margin:2px 0 0;font-size:15px;color:#5f5e5a">Inundación</p></div>
-      </button>
-      <button style="width:100%;padding:20px;background:#fff;border:2px solid #888780;border-radius:16px;margin-bottom:12px;display:flex;align-items:center;gap:16px;text-align:left">
-        <div style="width:64px;height:64px;border-radius:14px;background:#FAEEDA;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-wall" style="color:#854F0B;font-size:36px"></i>
-        </div>
-        <div><p style="margin:0;font-size:22px;font-weight:600">Pared rota</p><p style="margin:2px 0 0;font-size:15px;color:#5f5e5a">Grietas</p></div>
-      </button>
-      <button style="width:100%;padding:20px;background:#fff;border:2px solid #888780;border-radius:16px;display:flex;align-items:center;gap:16px;text-align:left">
-        <div style="width:64px;height:64px;border-radius:14px;background:#EAF3DE;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-tree" style="color:#27500A;font-size:36px"></i>
-        </div>
-        <div><p style="margin:0;font-size:22px;font-weight:600">Árbol caído</p><p style="margin:2px 0 0;font-size:15px;color:#5f5e5a">Caída de árbol</p></div>
-      </button>
     </div>`;
 
   const seniorAyuda = `
     <div style="padding:60px 18px 20px;background:#fffef9;min-height:100%">
       <p style="margin:0 0 18px;font-size:26px;font-weight:600">Ayuda</p>
-      <button style="width:100%;padding:26px;background:#A32D2D;color:#fff;border:0;border-radius:16px;font-size:26px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:16px">
+      <button data-action="show-phone" data-number="123" data-name="DAGRD Medellín" style="width:100%;padding:26px;background:#A32D2D;color:#fff;border:0;border-radius:16px;font-size:26px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:16px">
         <i class="ti ti-phone-call" style="font-size:40px"></i>Llamar al 123
       </button>
       <p style="margin:0 0 12px;font-size:19px;font-weight:600">Otros teléfonos</p>
-      <button style="width:100%;padding:20px;background:#fff;border:2px solid #888780;border-radius:16px;margin-bottom:12px;display:flex;align-items:center;gap:16px">
+      <button data-action="show-phone" data-number="119" data-name="Bomberos" style="width:100%;padding:20px;background:#fff;border:2px solid #888780;border-radius:16px;margin-bottom:12px;display:flex;align-items:center;gap:16px">
         <div style="width:56px;height:56px;border-radius:50%;background:#FAECE7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
           <i class="ti ti-flame" style="color:#D85A30;font-size:30px"></i>
         </div>
         <div style="flex:1;text-align:left"><p style="margin:0;font-size:20px;font-weight:600">Bomberos</p><p style="margin:2px 0 0;font-size:17px;color:#5f5e5a">119</p></div>
         <i class="ti ti-phone" style="font-size:30px;color:#1D9E75"></i>
       </button>
-      <button style="width:100%;padding:20px;background:#fff;border:2px solid #888780;border-radius:16px;margin-bottom:20px;display:flex;align-items:center;gap:16px">
+      <button data-action="show-phone" data-number="132" data-name="Cruz Roja" style="width:100%;padding:20px;background:#fff;border:2px solid #888780;border-radius:16px;display:flex;align-items:center;gap:16px">
         <div style="width:56px;height:56px;border-radius:50%;background:#FCEBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0">
           <i class="ti ti-ambulance" style="color:#A32D2D;font-size:30px"></i>
         </div>
         <div style="flex:1;text-align:left"><p style="margin:0;font-size:20px;font-weight:600">Cruz Roja</p><p style="margin:2px 0 0;font-size:17px;color:#5f5e5a">132</p></div>
         <i class="ti ti-phone" style="font-size:30px;color:#1D9E75"></i>
       </button>
-      <p style="margin:0 0 12px;font-size:19px;font-weight:600">¿Qué hacer si...?</p>
-      <button style="width:100%;padding:20px;background:#fff;border:2px solid #888780;border-radius:16px;margin-bottom:12px;display:flex;align-items:center;gap:16px">
-        <div style="width:56px;height:56px;border-radius:12px;background:#FAEEDA;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-mountain" style="color:#854F0B;font-size:32px"></i>
-        </div>
-        <div style="flex:1;text-align:left"><p style="margin:0;font-size:20px;font-weight:600">Cae tierra</p><p style="margin:2px 0 0;font-size:15px;color:#5f5e5a">Guía con dibujos</p></div>
-        <i class="ti ti-chevron-right" style="font-size:28px;color:#888780"></i>
-      </button>
-      <button style="width:100%;padding:20px;background:#fff;border:2px solid #888780;border-radius:16px;display:flex;align-items:center;gap:16px">
-        <div style="width:56px;height:56px;border-radius:12px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ti-droplet" style="color:#185FA5;font-size:32px"></i>
-        </div>
-        <div style="flex:1;text-align:left"><p style="margin:0;font-size:20px;font-weight:600">Hay inundación</p><p style="margin:2px 0 0;font-size:15px;color:#5f5e5a">Guía con dibujos</p></div>
-        <i class="ti ti-chevron-right" style="font-size:28px;color:#888780"></i>
-      </button>
     </div>`;
 
-  const screens = {
-    standard: { inicio: standardInicio, alertas: standardAlertas, mapa: standardMapa, reportar: standardReportar, ayuda: standardAyuda },
-    senior:   { inicio: seniorInicio,   alertas: seniorAlertas,   mapa: seniorMapa,   reportar: seniorReportar,   ayuda: seniorAyuda }
-  };
+  function renderSeniorReportar() {
+    const tipos = [
+      { id: 'deslizamiento', label: 'Tierra cayendo', sub: 'Deslizamiento', icon: 'ti-mountain', color: '#854F0B', bg: '#FAEEDA' },
+      { id: 'inundacion', label: 'Mucha agua', sub: 'Inundación', icon: 'ti-droplet', color: '#185FA5', bg: '#E6F1FB' },
+      { id: 'grietas', label: 'Pared rota', sub: 'Grietas', icon: 'ti-wall', color: '#854F0B', bg: '#FAEEDA' },
+      { id: 'arbol', label: 'Árbol caído', sub: 'Caída de árbol', icon: 'ti-tree', color: '#27500A', bg: '#EAF3DE' }
+    ];
+    return `
+    <div style="padding:60px 18px 20px;background:#fffef9;min-height:100%">
+      <button data-nav="inicio" style="background:#fff;border:2px solid #888780;border-radius:14px;padding:14px 18px;font-size:19px;display:flex;align-items:center;gap:12px;margin-bottom:16px;font-weight:600">
+        <i class="ti ti-arrow-left" style="font-size:24px"></i>Volver
+      </button>
+      ${currentReport.photo ? `
+        <img src="${currentReport.photo}" style="width:100%;height:200px;object-fit:cover;border-radius:14px;margin-bottom:14px"/>
+        <button data-action="retake" style="background:#fff;border:2px solid #888780;border-radius:12px;padding:14px;font-size:18px;font-weight:600;margin-bottom:18px;width:100%;display:flex;align-items:center;justify-content:center;gap:10px">
+          <i class="ti ti-refresh" style="font-size:24px"></i> Tomar otra foto
+        </button>
+      ` : `
+        <button data-action="camera" style="background:#185FA5;color:#fff;border:0;border-radius:14px;padding:22px;font-size:20px;font-weight:600;margin-bottom:18px;width:100%;display:flex;align-items:center;justify-content:center;gap:12px">
+          <i class="ti ti-camera" style="font-size:32px"></i> Tomar foto
+        </button>
+      `}
+      <p style="margin:0 0 18px;font-size:26px;font-weight:600;line-height:1.3">¿Qué está pasando?</p>
+      ${tipos.map(t => `
+        <button data-action="set-type" data-type="${t.id}" style="width:100%;padding:20px;background:${currentReport.type===t.id?'#FCEBEB':'#fff'};border:${currentReport.type===t.id?'3px solid #A32D2D':'2px solid #888780'};border-radius:16px;margin-bottom:12px;display:flex;align-items:center;gap:16px;text-align:left">
+          <div style="width:64px;height:64px;border-radius:14px;background:${t.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="ti ${t.icon}" style="color:${t.color};font-size:36px"></i>
+          </div>
+          <div><p style="margin:0;font-size:22px;font-weight:600">${t.label}</p><p style="margin:2px 0 0;font-size:15px;color:#5f5e5a">${t.sub}</p></div>
+        </button>
+      `).join('')}
+      ${currentReport.type ? `
+        <button data-action="send-report" style="width:100%;padding:24px;background:#A32D2D;color:#fff;border:0;border-radius:16px;font-size:24px;font-weight:600;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:14px">
+          <i class="ti ti-send" style="font-size:32px"></i> Enviar aviso
+        </button>
+      ` : ''}
+    </div>`;
+  }
 
-  function render(){
+  // ============= RENDER =============
+  function getScreens(mode) {
+    return {
+      standard: { inicio: renderInicio(), alertas: standardAlertas, mapa: standardMapa, reportar: renderReportar(), reportes: renderReportes(), ayuda: standardAyuda },
+      senior:   { inicio: renderSeniorInicio(), alertas: seniorAlertas, mapa: standardMapa, reportar: renderSeniorReportar(), reportes: renderReportes(), ayuda: seniorAyuda }
+    }[mode];
+  }
+
+  function render() {
     const mode = seniorMode ? 'senior' : 'standard';
+    const screens = getScreens(mode);
     const screenContent = document.getElementById('screen-content');
-    screenContent.innerHTML = screens[mode][currentScreen];
+    screenContent.innerHTML = screens[currentScreen] || screens.inicio;
     screenContent.classList.remove('fade-in');
     void screenContent.offsetWidth;
     screenContent.classList.add('fade-in');
 
-    const tabBar = seniorMode ? tabBarSenior(currentScreen) : tabBarStandard(currentScreen);
-    document.getElementById('tab-bar-container').innerHTML = tabBar;
+    document.getElementById('tab-bar-container').innerHTML =
+      seniorMode ? tabBarSenior(currentScreen) : tabBarStandard(currentScreen);
 
     document.querySelectorAll('[data-nav]').forEach(el => {
+      el.addEventListener('click', () => { currentScreen = el.dataset.nav; render(); });
+    });
+
+    document.querySelectorAll('[data-action]').forEach(el => {
       el.addEventListener('click', () => {
-        currentScreen = el.dataset.nav;
-        render();
+        const action = el.dataset.action;
+        if (action === 'show-phone') mostrarTelefono(el.dataset.number, el.dataset.name);
+        else if (action === 'camera') abrirCamara();
+        else if (action === 'retake') { currentReport.photo = null; render(); abrirCamara(); }
+        else if (action === 'set-type') {
+          currentReport.type = el.dataset.type;
+          if (!currentReport.location) pedirUbicacion();
+          render();
+        }
+        else if (action === 'get-location') pedirUbicacion();
+        else if (action === 'send-report') {
+          const desc = document.getElementById('report-description');
+          if (desc) currentReport.description = desc.value;
+          enviarReporte();
+        }
+        else if (action === 'locate') centrarEnUsuario();
+        else if (action === 'safe') { vibrate(50); showToast('Marcado como a salvo', 'success'); }
+        else if (action === 'enable-notifs') {
+          pedirPermisoNotificaciones().then(ok => {
+            if (ok) {
+              programarAlertasDePrueba();
+              render();
+            }
+          });
+        }
+        else if (action === 'delete-report') {
+          if (confirm('¿Borrar este reporte?')) {
+            eliminarReporte(parseInt(el.dataset.id));
+            showToast('Reporte borrado', 'success');
+            render();
+          }
+        }
+        else if (action === 'clear-all') {
+          if (confirm('¿Borrar todos los reportes?')) {
+            localStorage.removeItem('reportes');
+            showToast('Todos los reportes borrados', 'success');
+            render();
+          }
+        }
       });
     });
+
+    if (currentScreen === 'mapa') inicializarMapa();
+    else if (mapInstance) { mapInstance.remove(); mapInstance = null; }
   }
 
-  function toggleSenior(){
+  function toggleSenior() {
     seniorMode = !seniorMode;
     try { localStorage.setItem('seniorMode', seniorMode); } catch(e){}
-    const btn = document.getElementById('senior-toggle');
-    if (seniorMode) btn.classList.add('active');
-    else btn.classList.remove('active');
+    document.getElementById('senior-toggle').classList.toggle('active', seniorMode);
     render();
   }
 
-  // Inicializar
   if (seniorMode) document.getElementById('senior-toggle').classList.add('active');
   document.getElementById('senior-toggle').addEventListener('click', toggleSenior);
   render();
 
-  // Registrar service worker para PWA
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('sw.js').catch(()=>{});
