@@ -1032,6 +1032,169 @@ body.dagrd-mode .tab-icon.active i { color: #185FA5; }
       </div>
     </div>`;
 
+  // ============= PANTALLAS MODO SÉNIOR =============
+  function renderSeniorInicio() {
+    const alertasOficiales = obtenerAlertasOficiales();
+    return `
+    <div style="padding:60px 18px 20px;background:#fffef9;min-height:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+        <p style="margin:0;font-size:17px;color:#5f5e5a">Hola</p>
+        <button data-nav="login-dagrd" style="background:#0F1419;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-size:13px;display:flex;align-items:center;gap:6px;font-weight:500">
+          <i class="ti ti-shield-lock" style="font-size:16px"></i> DAGRD
+        </button>
+      </div>
+
+      ${alertasOficiales.length > 0 ? `
+        <div style="background:#FCEBEB;border:3px solid #A32D2D;border-radius:18px;padding:20px;margin-bottom:18px;text-align:center">
+          <div style="width:64px;height:64px;border-radius:50%;background:#A32D2D;margin:0 auto 12px;display:flex;align-items:center;justify-content:center">
+            <i class="ti ti-alert-octagon" style="color:#fff;font-size:38px"></i>
+          </div>
+          <p style="margin:0 0 8px;font-size:26px;font-weight:600;color:#501313">¡Peligro!</p>
+          <p style="margin:0 0 6px;font-size:17px;color:#791F1F;line-height:1.4">${alertasOficiales[0].sector || 'Comuna ' + alertasOficiales[0].comuna}</p>
+          <p style="margin:0;font-size:15px;color:#791F1F;line-height:1.4">${alertasOficiales[0].message}</p>
+        </div>
+      ` : `
+        <div style="background:#FAEEDA;border:3px solid #EF9F27;border-radius:18px;padding:20px;margin-bottom:18px;text-align:center">
+          <div style="width:64px;height:64px;border-radius:50%;background:#EF9F27;margin:0 auto 12px;display:flex;align-items:center;justify-content:center">
+            <i class="ti ti-alert-triangle" style="color:#fff;font-size:38px"></i>
+          </div>
+          <p style="margin:0 0 8px;font-size:26px;font-weight:600;color:#412402">Cuidado</p>
+          <p style="margin:0;font-size:17px;color:#633806;line-height:1.4">Está lloviendo fuerte<br/>en su barrio</p>
+        </div>
+      `}
+
+      <button data-nav="reportar" style="width:100%;padding:26px;background:#A32D2D;color:#fff;border:0;border-radius:16px;font-size:24px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:14px;font-family:inherit;cursor:pointer">
+        <i class="ti ti-camera" style="font-size:36px"></i>Avisar peligro
+      </button>
+      <button data-action="show-phone" data-number="123" data-name="DAGRD Medellín" style="width:100%;padding:22px;background:#185FA5;color:#fff;border:0;border-radius:16px;font-size:22px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:14px;font-family:inherit;cursor:pointer">
+        <i class="ti ti-phone-call" style="font-size:32px"></i>Llamar al 123
+      </button>
+      <button data-nav="mapa" style="width:100%;padding:22px;background:#fff;color:#1a1a1a;border:2px solid #888780;border-radius:16px;font-size:22px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:14px;font-family:inherit;cursor:pointer">
+        <i class="ti ti-map-2" style="font-size:32px"></i>Ver el mapa
+      </button>
+    </div>`;
+  }
+
+  function renderSeniorAlertas() {
+    const alertasOficiales = obtenerAlertasOficiales();
+    return `
+    <div style="padding:60px 18px 20px;background:#fffef9;min-height:100%">
+      <p style="margin:0 0 18px;font-size:26px;font-weight:600">Alertas</p>
+      ${alertasOficiales.length === 0 ? `
+        <div style="background:#fff;border:2px solid #888780;border-radius:16px;padding:40px 20px;text-align:center">
+          <div style="width:72px;height:72px;border-radius:50%;background:#f5f4ee;margin:0 auto 14px;display:flex;align-items:center;justify-content:center"><i class="ti ti-bell-off" style="font-size:42px;color:#888780"></i></div>
+          <p style="margin:0 0 6px;font-size:20px;font-weight:600">No hay peligros</p>
+          <p style="margin:0;font-size:16px;color:#5f5e5a">Su barrio está tranquilo</p>
+        </div>
+      ` : alertasOficiales.map(a => {
+        const colors = { rojo: { bg: '#FCEBEB', border: '#A32D2D', icon: '#fff', iconBg: '#A32D2D', text: '#501313', sub: '#791F1F' },
+                         naranja: { bg: '#FAECE7', border: '#D85A30', icon: '#fff', iconBg: '#D85A30', text: '#4A1B0C', sub: '#993C1D' },
+                         amarillo: { bg: '#FAEEDA', border: '#BA7517', icon: '#fff', iconBg: '#BA7517', text: '#412402', sub: '#854F0B' } };
+        const c = colors[a.level] || colors.rojo;
+        const titles = { rojo: '¡Peligro!', naranja: 'Cuidado', amarillo: 'Aviso' };
+        const icons = { rojo: 'ti-alert-octagon', naranja: 'ti-alert-triangle', amarillo: 'ti-cloud-rain' };
+        return `
+        <div style="background:${c.bg};border:3px solid ${c.border};border-radius:18px;padding:20px;margin-bottom:16px;text-align:center">
+          <div style="width:72px;height:72px;border-radius:50%;background:${c.iconBg};margin:0 auto 14px;display:flex;align-items:center;justify-content:center">
+            <i class="ti ${icons[a.level]}" style="color:${c.icon};font-size:42px"></i>
+          </div>
+          <p style="margin:0 0 8px;font-size:26px;font-weight:600;color:${c.text}">${titles[a.level]}</p>
+          <p style="margin:0 0 16px;font-size:18px;color:${c.sub};line-height:1.4">${a.message}</p>
+          ${a.level === 'rojo' ? `
+            <button data-nav="mapa" style="width:100%;padding:20px;background:${c.border};color:#fff;border:0;border-radius:14px;font-size:20px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:12px;font-family:inherit;cursor:pointer">
+              <i class="ti ti-route" style="font-size:28px"></i> Ver cómo llegar
+            </button>
+          ` : ''}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  function renderSeniorReportar() {
+    const tipos = [
+      { id: 'deslizamiento', label: 'Tierra cayendo', sub: 'Deslizamiento', icon: 'ti-mountain', color: '#854F0B', bg: '#FAEEDA' },
+      { id: 'inundacion', label: 'Mucha agua', sub: 'Inundación', icon: 'ti-droplet', color: '#185FA5', bg: '#E6F1FB' },
+      { id: 'grietas', label: 'Pared rota', sub: 'Grietas', icon: 'ti-wall', color: '#854F0B', bg: '#FAEEDA' },
+      { id: 'arbol', label: 'Árbol caído', sub: 'Caída de árbol', icon: 'ti-tree', color: '#27500A', bg: '#EAF3DE' }
+    ];
+    return `
+    <div style="padding:60px 18px 20px;background:#fffef9;min-height:100%">
+      <button data-nav="inicio" style="background:#fff;border:2px solid #888780;border-radius:14px;padding:14px 18px;font-size:19px;display:flex;align-items:center;gap:12px;margin-bottom:16px;font-weight:600;font-family:inherit;cursor:pointer">
+        <i class="ti ti-arrow-left" style="font-size:24px"></i>Volver
+      </button>
+      ${currentReport.photo ? `
+        <img src="${currentReport.photo}" style="width:100%;height:200px;object-fit:cover;border-radius:14px;margin-bottom:14px"/>
+        <button data-action="retake" style="background:#fff;border:2px solid #888780;border-radius:12px;padding:14px;font-size:18px;font-weight:600;margin-bottom:18px;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;font-family:inherit;cursor:pointer">
+          <i class="ti ti-refresh" style="font-size:24px"></i> Tomar otra foto
+        </button>
+      ` : `
+        <button data-action="camera" style="background:#185FA5;color:#fff;border:0;border-radius:14px;padding:22px;font-size:20px;font-weight:600;margin-bottom:18px;width:100%;display:flex;align-items:center;justify-content:center;gap:12px;font-family:inherit;cursor:pointer">
+          <i class="ti ti-camera" style="font-size:32px"></i> Tomar foto
+        </button>
+      `}
+      <p style="margin:0 0 4px;font-size:16px;color:#5f5e5a">Paso 1 de 2</p>
+      <p style="margin:0 0 18px;font-size:26px;font-weight:600;line-height:1.3">¿Qué está pasando?</p>
+      ${tipos.map(t => `
+        <button data-action="set-type" data-type="${t.id}" style="width:100%;padding:20px;background:${currentReport.type===t.id?'#FCEBEB':'#fff'};border:${currentReport.type===t.id?'3px solid #A32D2D':'2px solid #888780'};border-radius:16px;margin-bottom:12px;display:flex;align-items:center;gap:16px;text-align:left;font-family:inherit;cursor:pointer">
+          <div style="width:64px;height:64px;border-radius:14px;background:${t.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i class="ti ${t.icon}" style="color:${t.color};font-size:36px"></i>
+          </div>
+          <div><p style="margin:0;font-size:22px;font-weight:600">${t.label}</p><p style="margin:2px 0 0;font-size:15px;color:#5f5e5a">${t.sub}</p></div>
+        </button>
+      `).join('')}
+      ${currentReport.location ? `
+        <div style="background:#fff;border:2px solid #888780;border-radius:14px;padding:16px;margin-top:14px;display:flex;align-items:center;gap:12px">
+          <i class="ti ti-map-pin-filled" style="font-size:28px;color:#A32D2D"></i>
+          <div style="flex:1">
+            <p style="margin:0;font-size:16px;font-weight:600">Su lugar</p>
+            <p style="margin:2px 0 0;font-size:14px;color:#5f5e5a">${currentReport.address || 'Detectado'}</p>
+          </div>
+        </div>
+      ` : ''}
+      ${currentReport.type ? `
+        <button data-action="send-report" style="width:100%;padding:24px;background:#A32D2D;color:#fff;border:0;border-radius:16px;font-size:24px;font-weight:600;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:14px;font-family:inherit;cursor:pointer">
+          <i class="ti ti-send" style="font-size:32px"></i> Enviar aviso
+        </button>
+      ` : ''}
+    </div>`;
+  }
+
+  const seniorAyuda = `
+    <div style="padding:60px 18px 20px;background:#fffef9;min-height:100%">
+      <p style="margin:0 0 18px;font-size:26px;font-weight:600">Ayuda</p>
+      <button data-action="show-phone" data-number="123" data-name="DAGRD Medellín" style="width:100%;padding:26px;background:#A32D2D;color:#fff;border:0;border-radius:16px;font-size:26px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:16px;font-family:inherit;cursor:pointer">
+        <i class="ti ti-phone-call" style="font-size:40px"></i>Llamar al 123
+      </button>
+      <p style="margin:0 0 12px;font-size:19px;font-weight:600">Otros teléfonos</p>
+      <button data-action="show-phone" data-number="119" data-name="Bomberos" style="width:100%;padding:20px;background:#fff;border:2px solid #888780;border-radius:16px;margin-bottom:12px;display:flex;align-items:center;gap:16px;font-family:inherit;cursor:pointer">
+        <div style="width:56px;height:56px;border-radius:50%;background:#FAECE7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-flame" style="color:#D85A30;font-size:30px"></i>
+        </div>
+        <div style="flex:1;text-align:left"><p style="margin:0;font-size:20px;font-weight:600">Bomberos</p><p style="margin:2px 0 0;font-size:17px;color:#5f5e5a">119</p></div>
+        <i class="ti ti-phone" style="font-size:30px;color:#1D9E75"></i>
+      </button>
+      <button data-action="show-phone" data-number="132" data-name="Cruz Roja" style="width:100%;padding:20px;background:#fff;border:2px solid #888780;border-radius:16px;margin-bottom:20px;display:flex;align-items:center;gap:16px;font-family:inherit;cursor:pointer">
+        <div style="width:56px;height:56px;border-radius:50%;background:#FCEBEB;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-ambulance" style="color:#A32D2D;font-size:30px"></i>
+        </div>
+        <div style="flex:1;text-align:left"><p style="margin:0;font-size:20px;font-weight:600">Cruz Roja</p><p style="margin:2px 0 0;font-size:17px;color:#5f5e5a">132</p></div>
+        <i class="ti ti-phone" style="font-size:30px;color:#1D9E75"></i>
+      </button>
+      <p style="margin:0 0 12px;font-size:19px;font-weight:600">¿Qué hacer si...?</p>
+      <div style="background:#fff;border:2px solid #888780;border-radius:16px;padding:18px;margin-bottom:12px;display:flex;align-items:center;gap:14px">
+        <div style="width:56px;height:56px;border-radius:12px;background:#FAEEDA;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-mountain" style="color:#854F0B;font-size:32px"></i>
+        </div>
+        <div><p style="margin:0;font-size:18px;font-weight:600">Cae tierra</p><p style="margin:4px 0 0;font-size:15px;color:#5f5e5a;line-height:1.4">Aléjese de la ladera</p></div>
+      </div>
+      <div style="background:#fff;border:2px solid #888780;border-radius:16px;padding:18px;display:flex;align-items:center;gap:14px">
+        <div style="width:56px;height:56px;border-radius:12px;background:#E6F1FB;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-droplet" style="color:#185FA5;font-size:32px"></i>
+        </div>
+        <div><p style="margin:0;font-size:18px;font-weight:600">Hay inundación</p><p style="margin:4px 0 0;font-size:15px;color:#5f5e5a;line-height:1.4">Busque un lugar alto</p></div>
+      </div>
+    </div>`;
+
   // ============= RENDER PRINCIPAL =============
   function getScreens(mode) {
     if (dagrdSession) {
@@ -1046,7 +1209,7 @@ body.dagrd-mode .tab-icon.active i { color: #185FA5; }
     // Modo ciudadano
     return {
       standard: { inicio: renderInicio(), alertas: renderAlertas(), mapa: standardMapa, reportar: renderReportar(), reportes: renderReportes(), ayuda: standardAyuda, 'login-dagrd': renderLoginDagrd() },
-      senior: { inicio: renderInicio(), alertas: renderAlertas(), mapa: standardMapa, reportar: renderReportar(), reportes: renderReportes(), ayuda: standardAyuda, 'login-dagrd': renderLoginDagrd() }
+      senior: { inicio: renderSeniorInicio(), alertas: renderSeniorAlertas(), mapa: standardMapa, reportar: renderSeniorReportar(), reportes: renderReportes(), ayuda: seniorAyuda, 'login-dagrd': renderLoginDagrd() }
     }[mode];
   }
 
