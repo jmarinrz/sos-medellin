@@ -1392,11 +1392,19 @@ body.dagrd-mode .tab-icon.active i { color: #185FA5; }
   function toggleSenior() {
     seniorMode = !seniorMode;
     try { localStorage.setItem('seniorMode', seniorMode); } catch(e){}
-    document.getElementById('senior-toggle').classList.toggle('active', seniorMode);
+    const btn = document.getElementById('senior-toggle');
+    btn.classList.toggle('active', seniorMode);
+    const track = btn.querySelector('.toggle-track');
+    if (track) track.classList.toggle('on', seniorMode);
     render();
   }
 
-  if (seniorMode) document.getElementById('senior-toggle').classList.add('active');
+  // Restaurar estado visual al cargar
+  if (seniorMode) {
+    document.getElementById('senior-toggle').classList.add('active');
+    const track = document.querySelector('#senior-toggle .toggle-track');
+    if (track) track.classList.add('on');
+  }
   document.getElementById('senior-toggle').addEventListener('click', toggleSenior);
 
   // Si hay sesión DAGRD activa, ir al dashboard

@@ -1,7 +1,7 @@
 // Service Worker · SOS Medellín v3
 // Permite que la app funcione sin internet y muestre notificaciones del sistema
 
-const CACHE_NAME = 'sos-medellin-v3';
+const CACHE_NAME = 'sos-medellin-v5';
 const FILES_TO_CACHE = [
   './',
   './index.html',
